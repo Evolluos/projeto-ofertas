@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração de Ofertas</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card img {
+            height: 150px;
+            object-fit: cover;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center text-primary mb-4">Administração de Ofertas</h1>
+
+        <!-- Formulário de Cadastro -->
+        <div class="card p-3 mb-4 shadow-sm">
+            <h2 class="text-secondary">Cadastrar Nova Oferta</h2>
+            <form id="form-cadastro">
+                <div class="mb-3">
+                    <label for="titulo" class="form-label">Título da Oferta</label>
+                    <input type="text" id="titulo" class="form-control" placeholder="Digite o título" required>
+                </div>
+                <div class="mb-3">
+                    <label for="preco" class="form-label">Preço (R$)</label>
+                    <input type="number" step="0.01" id="preco" class="form-control" placeholder="Digite o preço" required>
+                </div>
+                <div class="mb-3">
+                    <label for="url_imagem" class="form-label">URL da Imagem</label>
+                    <input type="url" id="url_imagem" class="form-control" placeholder="Digite o URL da imagem" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Cadastrar Oferta</button>
+            </form>
+        </div>
+
+        <!-- Lista de Ofertas -->
+        <h2 class="text-secondary mb-3">Ofertas Cadastradas</h2>
+        <div id="lista-ofertas" class="row">
+            <!-- Cards serão adicionados aqui dinamicamente -->
+        </div>
+    </div>
+
+    <footer>
+        <p>Administração de Ofertas - Responsivo para Desktop e Celular</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const apiBaseUrl = "http://127.0.0.1:5000";
+
+        async function listarOfertas() {
+            const response = await fetch(`${apiBaseUrl}/listar_ofertas`);
+            const ofertas = await response.json();
+            const lista = document.getElementById('lista-ofertas');
+            lista.innerHTML = '';
+
+            ofertas.forEach(oferta => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-4';
+                card.innerHTML = `
+                    <div class="card shadow-sm">
+                        <img src="${oferta.url_imagem}" class="card-img-top" alt="${oferta.titulo}">
+                        <div class="card-body">
+                            <h5 class="card-title">${oferta.titulo}</h5>
+                            <p class="card-text text-success">Preço: R$ ${oferta.preco.toFixed(2)}</p>
+                            <button class="btn btn-danger w-100" onclick="deletarOferta(${oferta.id})">Excluir</button>
+                        </div>
+                    </div>
+                `;
+                lista.appendChild(card);
+            });
+        }
+
+        document.getElementById('form-cadastro').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const titulo = document.getElementById('titulo').value.trim();
+            const preco = parseFloat(document.getElementById('preco').value.trim());
+            const url_imagem = document.getElementById('url_imagem').value.trim();
+
+            if (!titulo || isNaN(preco) || preco <= 0 || !url_imagem.startsWith('http')) {
+                alert('Preencha todos os campos corretamente!');
+                return;
+            }
+
+            const response = await fetch(`${apiBaseUrl}/cadastrar_oferta`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, preco, url_imagem })
+            });
+
+            if (response.ok) {
+                alert('Oferta cadastrada com sucesso!');
+                listarOfertas();
+                this.reset();
+            } else {
+                alert('Erro ao cadastrar a oferta.');
+            }
+        });
+
+        async function deletarOferta(id) {
+            const response = await fetch(`${apiBaseUrl}/deletar_oferta/${id}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Oferta excluída com sucesso!');
+                listarOfertas();
+            } else {
+                alert('Erro ao excluir a oferta.');
+            }
+        }
+
+        listarOfertas();
+    </script>
+</body>
+</html>
